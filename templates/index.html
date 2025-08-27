@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>🎬 Movie Recommender Pro</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root {
+      --overlay: rgba(6, 8, 15, 0.75);
+      --accent: #ffcc00;
+      --card-bg: rgba(18,18,20,0.72);
+      --glass: rgba(255,255,255,0.06);
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      color: #fff;
+      background: #000;
+      overflow-x: hidden;
+    }
+
+    /* ---------- Background collage ---------- */
+    .collage {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-auto-rows: 1fr;
+      gap: 6px;
+      padding: 30px;
+      z-index: 0;
+      filter: saturate(0.35) contrast(0.7) brightness(0.45);
+      transform: scale(1.05);
+      animation: slowPan 40s linear infinite alternate;
+    }
+    .collage img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 6px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+      opacity: 0.95;
+    }
+    @keyframes slowPan {
+      from { transform: scale(1.05) translateY(0); }
+      to { transform: scale(1.05) translateY(-30px); }
+    }
+
+    @media (max-width: 800px) { .collage { display: none; } }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(6,8,15,0.6) 0%, rgba(6,8,15,0.9) 70%);
+      z-index: 1;
+    }
+
+    /* ---------- Page ---------- */
+    .page {
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-top: 10px;
+      animation: fadeIn 1.2s ease forwards;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.6rem;
+      letter-spacing: 2px;
+      color: var(--accent);
+      text-shadow: 0 8px 30px rgba(0,0,0,0.7);
+    }
+    header p {
+      margin: 8px 0 0;
+      color: #cfcfcf;
+      font-size: 1rem;
+    }
+
+    /* Search bar */
+    .search-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: min(850px, 95%);
+      background: var(--glass);
+      padding: 14px 18px;
+      border-radius: 40px;
+      box-shadow: 0 6px 25px rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      animation: slideIn 1s ease forwards;
+    }
+    .search-left { flex:1; display:flex; align-items:center; gap:10px; }
+    .search-left input[type="text"] {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 1.05rem;
+      padding: 8px;
+    }
+    .hint {
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+    .search-btn {
+      background: linear-gradient(135deg,var(--accent),#ff9500);
+      border: none;
+      color: #000;
+      font-weight: 700;
+      padding: 11px 20px;
+      border-radius: 28px;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(255,204,0,0.15);
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .search-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(255,204,0,0.25); }
+
+    /* Highlighted searched movie */
+    .highlight {
+      display:flex;
+      gap: 18px;
+      align-items:center;
+      background: var(--card-bg);
+      padding: 16px;
+      border-radius: 16px;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.65);
+      animation: fadeUp .8s ease forwards;
+    }
+    .highlight .poster {
+      width: 150px; height: 220px;
+      border-radius: 12px; overflow:hidden;
+    }
+    .highlight .poster img { width:100%; height:100%; object-fit:cover; }
+    .highlight .meta { flex:1; }
+    .highlight h2 { margin:0; color: var(--accent); }
+
+    /* Grid with scroll */
+    .grid {
+      margin-top: 20px;
+      max-height: 55vh;
+      overflow-y: auto;
+      padding-right: 6px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px,1fr));
+      gap: 18px;
+      animation: fadeUp 1s ease forwards;
+    }
+    .grid::-webkit-scrollbar { width: 8px; }
+    .grid::-webkit-scrollbar-thumb { background: #555; border-radius: 8px; }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.55);
+      cursor: pointer;
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+    .card img {
+      width: 100%; height: 260px; object-fit: cover;
+      transition: transform .3s ease;
+    }
+    .card:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 15px 40px rgba(0,0,0,0.7); }
+    .card:hover img { transform: scale(1.05); }
+    .title {
+      padding: 10px;
+      text-align:center;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .msg {
+      margin-top: 20px;
+      text-align: center;
+      color: #ddd;
+      font-size: 1rem;
+    }
+
+    /* Animations */
+    @keyframes fadeIn { from {opacity:0; transform:translateY(-10px);} to{opacity:1; transform:none;} }
+    @keyframes slideIn { from {opacity:0; transform:translateY(20px);} to{opacity:1; transform:none;} }
+    @keyframes fadeUp { from {opacity:0; transform:translateY(25px);} to{opacity:1; transform:none;} }
+  </style>
+</head>
+<body>
+  <!-- Background collage -->
+  <div class="collage">
+    <img src="https://images.unsplash.com/photo-1542207258-9d79a8f8da2e?auto=format&fit=crop&w=800&q=60" alt="">
+    <img src="https://images.unsplash.com/photo-1517604931442-8b3b3b3a4f0e?auto=format&fit=crop&w=800&q=60" alt="">
+    <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=60" alt="">
+    <img src="https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?auto=format&fit=crop&w=800&q=60" alt="">
+    <img src="https://images.unsplash.com/photo-1507878866276-a947ef722fee?auto=format&fit=crop&w=800&q=60" alt="">
+    <img src="https://images.unsplash.com/photo-1493244040629-496f6d136cc3?auto=format&fit=crop&w=800&q=60" alt="">
+  </div>
+  <div class="overlay"></div>
+
+  <!-- Content -->
+  <main class="page">
+    <header>
+      <h1>🎬 Movie Recommender</h1>
+      <p>Type a movie name & get AI-powered recommendations</p>
+    </header>
+
+    <div class="search-wrap">
+      <div class="search-left">
+        <input id="movieInput" type="text" placeholder="Search a movie (e.g. Inception)" />
+        <div class="hint">Press Enter or click Search</div>
+      </div>
+      <button class="search-btn" id="searchBtn">Search</button>
+    </div>
+
+    <div id="highlightContainer" class="highlight" style="display:none"></div>
+    <div id="grid" class="grid"></div>
+    <div id="message" class="msg" style="display:none"></div>
+  </main>
+
+  <script>
+    const searchBtn = document.getElementById('searchBtn');
+    const input = document.getElementById('movieInput');
+    const grid = document.getElementById('grid');
+    const highlightContainer = document.getElementById('highlightContainer');
+    const message = document.getElementById('message');
+
+    function showMessage(txt) {
+      message.style.display = 'block';
+      message.textContent = txt;
+    }
+    function hideMessage() { message.style.display = 'none'; }
+
+    async function getRecommendations() {
+      const title = input.value.trim();
+      if (!title) return showMessage("🎬 Please enter a movie title.");
+      showMessage("🔍 Searching recommendations...");
+      grid.innerHTML = '';
+      highlightContainer.style.display = 'none';
+
+      try {
+        const resp = await fetch(`/recommend?movie=${encodeURIComponent(title)}`);
+        const data = await resp.json();
+
+        if (!resp.ok || !Array.isArray(data) || !data.length) {
+          return showMessage("⚠️ No recommendations found.");
+        }
+        hideMessage();
+
+        const searchedPoster = data[0].poster || `https://via.placeholder.com/300x450?text=${encodeURIComponent(title)}`;
+        highlightContainer.innerHTML = `
+          <div class="poster"><img src="${searchedPoster}" alt="${title}"></div>
+          <div class="meta"><h2>${title}</h2><p>Top ${data.length} recommendations for you:</p></div>
+        `;
+        highlightContainer.style.display = 'flex';
+
+        grid.innerHTML = '';
+        data.forEach(item => {
+          if (item.title.toLowerCase() === title.toLowerCase()) return;
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${item.poster || 'https://via.placeholder.com/300x450?text=No+Image'}" alt="${item.title}">
+            <div class="title">${item.title}</div>
+          `;
+          grid.appendChild(card);
+        });
+      } catch (err) {
+        showMessage("❌ Network error — please try again.");
+      }
+    }
+
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') getRecommendations(); });
+    searchBtn.addEventListener('click', getRecommendations);
+  </script>
+</body>
+</html>
